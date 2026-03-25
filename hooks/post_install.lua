@@ -4,7 +4,7 @@
 function PLUGIN:PostInstall(ctx)
     local sdkInfo = ctx.sdkInfo[PLUGIN.name]
     local path = sdkInfo.path
-    -- local version = sdkInfo.version
+    local version = sdkInfo.version
 
     -- Example 1: Single binary file (most common)
     -- The file is downloaded directly, move it to bin/ and make executable
@@ -12,6 +12,15 @@ function PLUGIN:PostInstall(ctx)
 
     local srcFile = path .. "/" .. PLUGIN.name
     local destFile = path .. "/bin/" .. PLUGIN.name
+
+    if version == "master" then
+        local result = os.execute("cd " .. path .. " && zig build -Doptimize=ReleaseSafe")
+        if result ~= 0 then
+            error("Failed to build " .. PLUGIN.name .. " binary")
+        end
+
+        srcFile = path .. "/zig-out/bin/" .. PLUGIN.name
+    end
 
     -- Move and make executable
     local result = os.execute("mv " .. srcFile .. " " .. destFile .. " && chmod +x " .. destFile)

@@ -1,3 +1,37 @@
+--- @return string
+local function get_master_checksum()
+    local os_name = RUNTIME.osType:lower()
+
+    local url = "https://github.com/zigtools/zls/archive/refs/heads/master.zip"
+    local cmd
+
+    if os_name == "linux" then
+        cmd = string.format("curl -sL %q | sha256sum", url)
+    elseif os_name == "darwin" then
+        cmd = string.format("curl -sL %q | shasum -a 256", url)
+    elseif os_name == "windows" then
+        cmd = string.format(
+            [[powershell -Command "Invoke-WebRequest -Uri %q -OutFile temp.zip;
+            (Get-FileHash temp.zip -Algorithm SHA256).Hash;
+            Remove-Item temp.zip"]],
+            url
+        )
+    end
+
+    local handle, err = io.popen(cmd)
+    if not handle then
+        error("Failed to run command: " .. err)
+    end
+
+    local output = handle:read("*a")
+    handle:close()
+
+    -- Extract the alphanumeric hash (works for both powershell output and sha256sum/shasum)
+    local checksum = output:match("(%w+)")
+
+    return tostring(checksum)
+end
+
 --- Returns a list of available versions for the tool
 --- Documentation: https://mise.jdx.dev/tool-plugin-development.html#available-hook
 --- @param ctx {args: string[]} Context (args = user arguments)
@@ -8,7 +42,7 @@ function PLUGIN:Available(ctx)
 
     -- Example 1: GitHub Tags API (most common)
     -- Replace <GITHUB_USER>/<GITHUB_REPO> with your tool's repository
-    local repo_url = "https://api.github.com/repos/<GITHUB_USER>/<GITHUB_REPO>/tags"
+    local repo_url = "https://api.github.com/repos/zigtools/zls/tags"
 
     -- Example 2: GitHub Releases API (for tools that use GitHub releases)
     -- local repo_url = "https://api.github.com/repos/<GITHUB_USER>/<GITHUB_REPO>/releases"
@@ -26,7 +60,14 @@ function PLUGIN:Available(ctx)
     end
 
     local tags = json.decode(resp.body)
-    local result = {}
+    local result = {
+        {
+            version = "master",
+            note = "build from master branch",
+            rolling = true,
+            checksum = get_master_checksum(),
+        },
+    }
 
     -- Process tags/releases
     for _, tag_info in ipairs(tags) do
@@ -42,7 +83,7 @@ function PLUGIN:Available(ctx)
 
         table.insert(result, {
             version = version,
-            note = nil, -- Optional: "latest", "lts", "pre-release", etc.
+            note = version, -- Optional: "latest", "lts", "pre-release", etc.
             -- addition = {} -- Optional: additional tools/components
         })
     end

@@ -4,19 +4,19 @@
 
 PLUGIN = { -- luacheck: ignore
     -- Required: Tool name (lowercase, no spaces)
-    name = "<TOOL>",
+    name = "zls",
 
     -- Required: Plugin version (not the tool version)
     version = "1.0.0",
 
     -- Required: Brief description of the tool
-    description = "A mise tool plugin for <TOOL>",
+    description = "A mise tool plugin for zls (supports tracking the master branch)",
 
     -- Required: Plugin author/maintainer
-    author = "<GITHUB_USER>",
+    author = "MZwallow",
 
     -- Optional: Repository URL for plugin updates
-    updateUrl = "https://github.com/<GITHUB_USER>/mise-<TOOL>",
+    updateUrl = "https://github.com/mzwallow/mise-zls",
 
     -- Optional: Minimum mise runtime version required
     minRuntimeVersion = "0.2.0",
